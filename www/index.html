@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bae</title>
+<style>
+  :root {
+    --bg: #e8eaee;
+    --panel: #f4f5f7;
+    --paper: #fbfbfc;
+    --ink: #17191d;
+    --muted: #5c6570;
+    --faint: #8b939c;
+    --line: #dfe2e7;
+    --line-strong: #cfd4db;
+    --fill: #e7ebf1;
+    --fill-strong: #dce3ee;
+    --accent: #1a4068;
+    --accent-ink: #f7f8fa;
+    --mark: #1a4068;
+    --warn: #8a4b12;
+    --warn-bg: #f8efe6;
+    --shadow: 0 12px 40px rgba(23, 25, 29, 0.12);
+    --sans: "Adwaita Sans", "Noto Sans", sans-serif;
+    --mono: "iA Writer Mono S", "Liberation Mono", ui-monospace, monospace;
+    --nav: 212px;
+    --list: 392px;
+    --top: 48px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .field input:focus-visible, .composer textarea:focus-visible, .search input:focus-visible {
+    outline: none;
+  }
+
+  .app {
+    height: 100%;
+    display: grid;
+    grid-template-rows: var(--top) minmax(0, 1fr);
+    min-width: 960px;
+  }
+
+  header.bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 14px 0 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .brand {
+    width: calc(var(--nav) - 16px);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-size: 15px;
+  }
+  .search {
+    flex: 1;
+    max-width: 440px;
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    height: 32px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 0 10px 0 30px;
+    font-size: 13px;
+  }
+  .search input::placeholder { color: var(--faint); }
+  .search svg {
+    position: absolute;
+    left: 9px;
+    top: 8px;
+    color: var(--faint);
+  }
+  .bar-spacer { flex: 1; }
+  .compose-btn {
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .compose-btn:hover { filter: brightness(1.08); }
+
+  .body {
+    display: grid;
+    grid-template-columns: var(--nav) var(--list) minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  nav.folders {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 12px 8px 10px;
+  }
+  .nav-label {
+    margin: 12px 8px 4px;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nav-label:first-child { margin-top: 2px; }
+  .folder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 30px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    text-align: left;
+    font-size: 13.5px;
+  }
+  .folder:hover { background: var(--fill); }
+  .folder[aria-current="true"] {
+    background: var(--fill-strong);
+    font-weight: 650;
+  }
+  .folder .count {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .folder[aria-current="true"] .count { color: var(--ink); }
+  .me {
+    margin-top: auto;
+    padding: 10px 8px 4px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .me span { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink); margin-bottom: 2px; }
+
+  .list {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+  .list-head {
+    height: 42px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+  }
+  .list-head h1 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .list-head .sub { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .rows { overflow: auto; min-height: 0; }
+  .row {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    padding: 10px 16px 11px;
+  }
+  .row:hover { background: #eef0f3; }
+  .row[aria-selected="true"] {
+    background: var(--paper);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .row-top, .row-sub {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+  .addr {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .row.unread .addr { color: var(--ink); }
+  .row.unread .subject { font-weight: 650; }
+  .when {
+    margin-left: auto;
+    flex: none;
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .row.unread .when { color: var(--ink); }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mark);
+    flex: none;
+    transform: translateY(-1px);
+  }
+  .dot.off { visibility: hidden; }
+  .subject {
+    font-size: 13.5px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .preview {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .empty {
+    padding: 48px 24px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .read {
+    background: var(--paper);
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .tools {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+  }
+  .tool, .send {
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .tool:hover { background: var(--fill); }
+  .tool:disabled { color: var(--faint); cursor: default; }
+  .tool:disabled:hover { background: transparent; }
+  .tool.primary, .send {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .tool.primary:hover, .send:hover { filter: brightness(1.08); background: var(--accent); }
+  .tools .spacer { flex: 1; }
+  .menu-wrap { position: relative; }
+  .menu {
+    position: absolute;
+    top: 32px;
+    left: 0;
+    z-index: 5;
+    min-width: 160px;
+    padding: 4px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+  }
+  .menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    border-radius: 5px;
+    height: 30px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+  .menu button:hover { background: var(--fill); }
+  .hidden { display: none !important; }
+
+  .letter {
+    overflow: auto;
+    min-height: 0;
+    padding: 28px 40px 64px;
+  }
+  .letter h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    line-height: 1.3;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    max-width: 40rem;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 5px 8px;
+    max-width: 44rem;
+    font-size: 13px;
+    margin: 0;
+  }
+  .meta .when {
+    grid-column: 3;
+    grid-row: 1;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .meta dt { color: var(--muted); }
+  .meta dd { margin: 0; min-width: 0; }
+  .who { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+  .who .name { font-weight: 600; }
+  .who .handle, .meta .handle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .flag {
+    font-size: 11.5px;
+    color: var(--warn);
+    background: var(--warn-bg);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .facts {
+    margin: 14px 0 22px;
+    max-width: 44rem;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .facts summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    width: max-content;
+  }
+  .facts summary:hover { color: var(--ink); }
+  .facts dl {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 3px 8px;
+    margin: 8px 0 0;
+  }
+  .facts dt { color: var(--faint); }
+  .facts dd { margin: 0; }
+  .prose {
+    max-width: 40rem;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .prose p { margin: 0 0 1em; }
+  .prose blockquote {
+    margin: 0 0 1em;
+    padding-left: 12px;
+    border-left: 2px solid var(--line-strong);
+    color: var(--muted);
+  }
+  .file {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--panel);
+    font-size: 12.5px;
+  }
+  .file b { font-family: var(--mono); font-weight: 500; }
+  .file span { color: var(--muted); }
+
+  .composer {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+  }
+  .fields { padding: 8px 20px 0; }
+  .field {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    border-bottom: 1px solid var(--line);
+  }
+  .field label { color: var(--muted); font-size: 13px; }
+  .field input {
+    border: 0;
+    background: transparent;
+    height: 34px;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .field.subject input {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .composer textarea {
+    flex: 1;
+    border: 0;
+    resize: none;
+    padding: 18px 20px 24px;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 0;
+  }
+
+  .blank {
+    margin: auto;
+    color: var(--muted);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">Bae</div>
+    <label class="search">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <circle cx="6" cy="6" r="4.25" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M9.2 9.2 12 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <input id="q" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="bar-spacer"></div>
+    <button class="compose-btn" id="compose" type="button">Compose</button>
+  </header>
+  <div class="body">
+    <nav class="folders" id="folders" aria-label="Folders"></nav>
+    <section class="list">
+      <div class="list-head">
+        <h1 id="list-title">Inbox</h1>
+        <span class="sub" id="list-count"></span>
+      </div>
+      <div class="rows" id="rows"></div>
+    </section>
+    <section class="read" id="read" aria-live="polite"></section>
+  </div>
+</div>
+<script>
+const ME = { name: "You", handle: "you@localhost" };
+const FOLDERS = [
+  { id: "inbox", name: "Inbox", group: "Mail" },
+  { id: "sent", name: "Sent", group: "Mail" },
+  { id: "drafts", name: "Drafts", group: "Mail" },
+  { id: "archive", name: "Archive", group: "Mail" },
+  { id: "junk", name: "Junk", group: "Mail" },
+  { id: "proofs", name: "Proofs", group: "Filed" },
+  { id: "ops", name: "Ops", group: "Filed" },
+];
+
+let mail = [
+  {
+    id: "m1", folder: "inbox", unread: false,
+    from: { name: "Nia Chen", handle: "nia@relay.example", known: true },
+    to: [ME],
+    cc: [{ name: "Leo Marquez", handle: "leo@chain.example" }],
+    subject: "Proof on tx 4c1a didn't verify",
+    when: "09:14",
+    preview: "The bump you sent doesn't match the header at height 812441.",
+    body: [
+      "The bump you sent doesn't match the header at height 812441. I checked the merkle path against the header we both have. The leaf is the transaction. The path fails at the third sibling.",
+      "I've attached the bump as I received it. If your copy differs, send that and I'll diff them.",
+    ],
+    sign: "Nia",
+    file: { name: "bump.hex", size: "2.4 KB" },
+    box: "Inbox",
+    mid: "<4c1a8e.9f@relay.example>",
+  },
+  {
+    id: "m2", folder: "inbox", unread: true,
+    from: { name: "Sam Okonkwo", handle: "sam@elsewhere.example", known: false },
+    to: [ME],
+    cc: [],
+    subject: "A note on your handle",
+    when: "08:02",
+    preview: "I resolved you@localhost and wanted to ask about the topic you published.",
+    body: [
+      "I resolved you@localhost and wanted to ask about the topic you published last week. I don't think I'm in your book.",
+      "Happy to pay whatever you charge for mail from outside it. Tell me the address to pay and I'll send the question with it.",
+    ],
+    sign: "Sam",
+    box: "Inbox",
+    mid: "<note.21@elsewhere.example>",
+  },
+  {
+    id: "m3", folder: "inbox", unread: true,
+    from: { name: "Ada Voss", handle: "ada@overlay.example", known: true },
+    to: [ME],
+    cc: [{ name: "Nia Chen", handle: "nia@relay.example" }],
+    subject: "tm_demo admitted two outputs",
+    when: "Yesterday",
+    preview: "Both outputs were in the submission. The second one is the change.",
+    body: [
+      "Both outputs were in the submission. The second one is the change, not a second token. Lookup is answering as if they were two admissions.",
+      "I can send the raw transaction if you want to judge it again.",
+    ],
+    sign: "Ada",
+    box: "Inbox",
+    mid: "<tm.demo.2@overlay.example>",
+  },
+  {
+    id: "m4", folder: "inbox", unread: false,
+    from: { name: "Leo Marquez", handle: "leo@chain.example", known: true },
+    to: [ME],
+    cc: [],
+    subject: "Re: header at 812440",
+    when: "Mon",
+    preview: "Confirmed. That header is the one I have, byte for byte.",
+    body: [
+      "Confirmed. That header is the one I have, byte for byte.",
+    ],
+    quote: "Does your copy of the header at 812440 end in 0x9c?",
+    sign: "Leo",
+    box: "Inbox",
+    mid: "<hdr.812440@chain.example>",
+  },
+  {
+    id: "m5", folder: "sent", unread: false,
+    from: ME,
+    to: [{ name: "Nia Chen", handle: "nia@relay.example" }],
+    cc: [],
+    subject: "Re: Proof on tx 4c1a didn't verify",
+    when: "09:41",
+    preview: "Mine fails at the same sibling. Sending the bump I built.",
+    body: [
+      "Mine fails at the same sibling. Sending the bump I built, not the one the relay returned.",
+    ],
+    sign: "You",
+    file: { name: "bump-local.hex", size: "2.4 KB" },
+    box: "Inbox",
+    mid: "<re.4c1a@localhost>",
+  },
+  {
+    id: "m6", folder: "archive", unread: false,
+    from: { name: "Host", handle: "host@localhost", known: true },
+    to: [ME],
+    cc: [],
+    subject: "Claim row is gone",
+    when: "Apr 2",
+    preview: "The instance is claimed. The claim row was removed.",
+    body: [
+      "The instance is claimed. The claim row was removed. Admin rows are yours.",
+    ],
+    sign: "Host",
+    box: "Inbox",
+    mid: "<claim.done@localhost>",
+  },
+  {
+    id: "m7", folder: "proofs", unread: false,
+    from: { name: "Nia Chen", handle: "nia@relay.example", known: true },
+    to: [ME],
+    cc: [],
+    subject: "Earlier bump, for the file",
+    when: "Mar 28",
+    preview: "Filing this here so it isn't sitting in the inbox.",
+    body: [
+      "Filing this here so it isn't sitting in the inbox. The transaction later proved.",
+    ],
+    sign: "Nia",
+    box: "Inbox",
+    mid: "<earlier.bump@relay.example>",
+  },
+  {
+    id: "m8", folder: "drafts", unread: false, draft: true,
+    from: ME,
+    to: [{ name: "Ada Voss", handle: "ada@overlay.example" }],
+    cc: [],
+    subject: "Re: tm_demo admitted two outputs",
+    when: "Draft",
+    preview: "The change output should not have been identified.",
+    body: [
+      "The change output should not have been identified. I'll look at the topic rules before I say which one is wrong.",
+    ],
+    sign: "",
+    box: "Inbox",
+    mid: "",
+  },
+];
+
+let folder = "inbox";
+let selected = "m1";
+let query = "";
+let composing = null;
+let menuOpen = false;
+let factsOpen = false;
+
+const $ = (id) => document.getElementById(id);
+
+function count(id) {
+  return mail.filter((m) => m.folder === id && (id === "drafts" || m.unread || id !== "inbox" ? true : true)).length;
+}
+function unreadCount(id) {
+  return mail.filter((m) => m.folder === id && m.unread).length;
+}
+
+function visible() {
+  const q = query.trim().toLowerCase();
+  return mail.filter((m) => {
+    if (m.folder !== folder) return false;
+    if (!q) return true;
+    const blob = [m.subject, m.preview, m.from.handle, m.from.name, ...(m.to || []).map((t) => t.handle)].join(" ").toLowerCase();
+    return blob.includes(q);
+  });
+}
+
+function renderFolders() {
+  const nav = $("folders");
+  let html = "";
+  let group = "";
+  for (const f of FOLDERS) {
+    if (f.group !== group) {
+      group = f.group;
+      html += `<div class="nav-label">${group}</div>`;
+    }
+    const n = f.id === "inbox" ? unreadCount(f.id) : count(f.id);
+    const show = f.id === "inbox" ? n : (n || "");
+    html += `<button class="folder" type="button" data-folder="${f.id}" aria-current="${f.id === folder}">${f.name}<span class="count">${show}</span></button>`;
+  }
+  html += `<div class="me"><span>${ME.name}</span>${ME.handle}</div>`;
+  nav.innerHTML = html;
+}
+
+function renderList() {
+  const rows = visible();
+  const f = FOLDERS.find((x) => x.id === folder);
+  $("list-title").textContent = f.name;
+  const unread = rows.filter((m) => m.unread).length;
+  $("list-count").textContent = unread ? `${unread} unread` : "";
+  const el = $("rows");
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">${query ? "No matches." : "Nothing here."}</div>`;
+    return;
+  }
+  el.innerHTML = rows.map((m) => {
+    const who = m.folder === "sent" || m.folder === "drafts" ? (m.to[0] ? m.to[0].handle : "No recipient") : m.from.handle;
+    const prefix = m.folder === "sent" || m.folder === "drafts" ? "To " : "";
+    return `<button class="row ${m.unread ? "unread" : ""}" type="button" data-id="${m.id}" aria-selected="${m.id === selected}">
+      <div class="row-top">
+        <i class="dot ${m.unread ? "" : "off"}"></i>
+        <span class="addr">${prefix}${who}</span>
+        <span class="when">${m.when}</span>
+      </div>
+      <div class="subject">${esc(m.subject || "(no subject)")}</div>
+      <div class="preview">${esc(m.preview)}</div>
+    </button>`;
+  }).join("");
+}
+
+function people(list) {
+  if (!list || !list.length) return "—";
+  return list.map((p) => `<span class="handle">${esc(p.handle)}</span>`).join(", ");
+}
+
+function renderRead() {
+  const el = $("read");
+  if (composing) {
+    const c = composing;
+    el.innerHTML = `<form class="composer" id="composer">
+      <div class="tools">
+        <button class="send" type="submit">Send</button>
+        <button class="tool" type="button" id="discard">Discard</button>
+        <span class="spacer"></span>
+      </div>
+      <div class="fields">
+        <div class="field"><label for="to">To</label><input id="to" value="${esc(c.to)}" spellcheck="false"></div>
+        <div class="field"><label for="cc">Cc</label><input id="cc" value="${esc(c.cc)}" spellcheck="false"></div>
+        <div class="field"><label for="bcc">Bcc</label><input id="bcc" value="${esc(c.bcc)}" spellcheck="false" placeholder="Not shown to other recipients"></div>
+        <div class="field subject"><label for="subject">Subject</label><input id="subject" value="${esc(c.subject)}"></div>
+      </div>
+      <textarea id="body">${esc(c.body)}</textarea>
+    </form>`;
+    $("composer").addEventListener("submit", onSend);
+    $("discard").addEventListener("click", () => { composing = null; render(); });
+    $("body").focus();
+    return;
+  }
+  const m = mail.find((x) => x.id === selected && x.folder === folder) || visible()[0];
+  if (!m) {
+    el.innerHTML = `<div class="blank">No message selected.</div>`;
+    return;
+  }
+  selected = m.id;
+  const known = m.from.known !== false;
+  el.innerHTML = `
+    <div class="tools">
+      <button class="tool primary" type="button" id="reply">Reply</button>
+      <button class="tool" type="button" id="reply-all" ${m.cc && m.cc.length ? "" : "disabled"}>Reply all</button>
+      <button class="tool" type="button" id="archive">Archive</button>
+      <div class="menu-wrap">
+        <button class="tool" type="button" id="move" aria-expanded="${menuOpen}">Move</button>
+        <div class="menu ${menuOpen ? "" : "hidden"}" id="move-menu">
+          ${FOLDERS.filter((f) => f.id !== m.folder && f.id !== "drafts").map((f) => `<button type="button" data-move="${f.id}">${f.name}</button>`).join("")}
+        </div>
+      </div>
+      <span class="spacer"></span>
+    </div>
+    <article class="letter">
+      <h2>${esc(m.subject || "(no subject)")}</h2>
+      <dl class="meta">
+        <dt>From</dt>
+        <dd><div class="who"><span class="name">${esc(m.from.name)}</span><span class="handle">${esc(m.from.handle)}</span>${known ? "" : `<span class="flag">Not in contacts</span>`}</div></dd>
+        <dd class="when">${esc(m.when)}</dd>
+        <dt>To</dt>
+        <dd>${people(m.to)}</dd>
+        <dd></dd>
+        ${m.cc && m.cc.length ? `<dt>Cc</dt><dd>${people(m.cc)}</dd><dd></dd>` : ""}
+      </dl>
+      <details class="facts" ${factsOpen ? "open" : ""}>
+        <summary>Details</summary>
+        <dl>
+          <dt>Box</dt><dd>${esc(m.box)}</dd>
+          <dt>Envelope</dt><dd>sealed</dd>
+          ${m.mid ? `<dt>Message-ID</dt><dd>${esc(m.mid)}</dd>` : ""}
+        </dl>
+      </details>
+      <div class="prose">
+        ${m.body.map((p) => `<p>${esc(p)}</p>`).join("")}
+        ${m.quote ? `<blockquote>${esc(m.quote)}</blockquote>` : ""}
+        ${m.sign ? `<p>${esc(m.sign)}</p>` : ""}
+        ${m.file ? `<div class="file"><b>${esc(m.file.name)}</b><span>${esc(m.file.size)}</span></div>` : ""}
+      </div>
+    </article>`;
+  $("reply").addEventListener("click", () => reply(m, false));
+  const all = $("reply-all");
+  if (all) all.addEventListener("click", () => reply(m, true));
+  $("archive").addEventListener("click", () => move(m.id, "archive"));
+  $("move").addEventListener("click", () => { menuOpen = !menuOpen; render(); });
+  const menu = $("move-menu");
+  if (menu) menu.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-move]");
+    if (!b) return;
+    move(m.id, b.dataset.move);
+  });
+  const facts = el.querySelector(".facts");
+  if (facts) facts.addEventListener("toggle", () => { factsOpen = facts.open; });
+  if (m.unread) m.unread = false;
+}
+
+function reply(m, all) {
+  const to = m.from.handle === ME.handle ? (m.to[0] ? m.to[0].handle : "") : m.from.handle;
+  const cc = all ? [...(m.cc || []).map((p) => p.handle), ...m.to.filter((p) => p.handle !== ME.handle).map((p) => p.handle)].filter((h) => h && h !== to).join(", ") : "";
+  composing = {
+    to,
+    cc,
+    bcc: "",
+    subject: m.subject.startsWith("Re:") ? m.subject : "Re: " + m.subject,
+    body: `\n\n— ${m.from.handle} wrote:\n${m.body.join("\n\n")}`,
+  };
+  menuOpen = false;
+  render();
+}
+
+function onSend(e) {
+  e.preventDefault();
+  const to = $("to").value.trim();
+  const subject = $("subject").value.trim();
+  const body = $("body").value.trim();
+  const id = "m" + Date.now();
+  mail.unshift({
+    id, folder: "sent", unread: false,
+    from: ME,
+    to: to ? [{ name: to, handle: to }] : [],
+    cc: $("cc").value.trim() ? $("cc").value.split(",").map((s) => ({ name: s.trim(), handle: s.trim() })) : [],
+    subject: subject || "(no subject)",
+    when: "Now",
+    preview: body.split("\n")[0].slice(0, 90) || "(empty)",
+    body: body ? body.split(/\n\n+/) : ["(empty)"],
+    sign: "",
+    box: "Inbox",
+    mid: `<${id}@localhost>`,
+  });
+  composing = null;
+  folder = "sent";
+  selected = id;
+  render();
+}
+
+function move(id, dest) {
+  const m = mail.find((x) => x.id === id);
+  if (!m) return;
+  m.folder = dest;
+  m.unread = false;
+  menuOpen = false;
+  const next = visible().find((x) => x.id !== id);
+  selected = next ? next.id : null;
+  render();
+}
+
+function render() {
+  if (selected && !mail.some((m) => m.id === selected && m.folder === folder) && !composing) {
+    const rows = visible();
+    selected = rows.length ? rows[0].id : null;
+  }
+  renderFolders();
+  renderList();
+  renderRead();
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+$("folders").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-folder]");
+  if (!b) return;
+  folder = b.dataset.folder;
+  composing = null;
+  menuOpen = false;
+  const rows = visible();
+  selected = rows.length ? rows[0].id : null;
+  render();
+});
+$("rows").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-id]");
+  if (!b) return;
+  selected = b.dataset.id;
+  composing = null;
+  menuOpen = false;
+  render();
+});
+$("compose").addEventListener("click", () => {
+  composing = { to: "", cc: "", bcc: "", subject: "", body: "" };
+  menuOpen = false;
+  render();
+  $("to").focus();
+});
+$("q").addEventListener("input", (e) => {
+  query = e.target.value;
+  renderList();
+  renderRead();
+});
+
+const params = new URLSearchParams(location.search);
+if (params.get("folder")) folder = params.get("folder");
+if (params.get("id")) selected = params.get("id");
+if (params.get("view") === "compose") {
+  composing = { to: "nia@relay.example", cc: "leo@chain.example", bcc: "", subject: "Re: Proof on tx 4c1a didn't verify", body: "Mine fails at the same sibling.\n\n" };
+}
+render();
+</script>
+</body>
+</html>

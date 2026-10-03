@@ -1,0 +1,5 @@
+{
+  "inputs": {},
+  "services": [],
+  "description": "Serves Bae's www/ from the app record's tree. A route handler: called, never stepped."
+}

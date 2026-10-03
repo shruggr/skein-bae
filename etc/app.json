@@ -1,0 +1,45 @@
+{
+  "kind": "app",
+  "name": "bae",
+  "version": "0.1.0",
+  "programs": {
+    "site": "bin/site.wasm"
+  },
+  "provides": [
+    {
+      "interface": "bae.page/1",
+      "functions": {
+        "get": {
+          "writes": false,
+          "args": {
+            "method?": "string",
+            "route?": "string",
+            "path?": "string",
+            "query?": "string",
+            "headers?": "map",
+            "match?": "map"
+          },
+          "answer": {
+            "status": "int",
+            "type": "string",
+            "headers": "map",
+            "body": "bytes"
+          }
+        }
+      }
+    }
+  ],
+  "requires": [],
+  "dispatch": [
+    {
+      "transport": "http",
+      "address": "/",
+      "prefix": true,
+      "sender": "*",
+      "program": "site",
+      "fn": "get",
+      "root": "www"
+    }
+  ],
+  "description": "Bae. GET /bae/ serves www/ from this app's own tree (the app record's tree link), not from main. The page is a client; it does not yet take the Inbox box."
+}
